@@ -6,8 +6,8 @@
 ## Roadmap:
 
 - Multi armed bandit algorithms
-  - Greedy agent  :white_check_mark:
-  - Epsilon Greedy agent  :white_check_mark:
+  - ~~Greedy agent~~  :white_check_mark:
+  - ~~Epsilon Greedy agent~~  :white_check_mark:
   - Optimistic initial values
   - Upper confidence bound
   - Gradient bandit algorithms

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
+from rich.progress import track
 
 
 def argmax(values: np.array):
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     average_best = 0
     greedy_agent_rewards = np.zeros((n_runs, steps_per_run))
     epsilon_greedy_agent_rewards = np.zeros((n_runs, steps_per_run))
-    for run in tqdm(range(n_runs)):
+    for run in track(range(n_runs)):
 
         np.random.seed(run)
 

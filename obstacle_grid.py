@@ -176,7 +176,7 @@ class GridEnvironment:
         symbols = self.AGENT_SYMBOLS if self.use_unicode else self.AGENT_SYMBOLS_ASCII
 
         # Top border
-        top_border = "┌" + "─" * (self.cols * 2 - 1) + "┐"
+        top_border = "┌" + "─" * (self.cols * 4 - 1) + "┐"
         print(top_border)
 
         # Grid rows
@@ -184,15 +184,16 @@ class GridEnvironment:
             row_str = "│"
 
             for col in range(self.cols):
-                cell_content = " "
+                cell_content = "   "
 
                 # Check what to draw in this cell
                 if (row, col) == tuple(self.agent_pos):
                     # Draw agent with direction indicator
-                    cell_content = symbols[self.agent_direction]
+                    symbol = symbols[self.agent_direction]
+                    cell_content = " " + symbol + " "
                 elif (row, col) in self.obstacles:
                     # Draw obstacle
-                    cell_content = "#"
+                    cell_content = " # "
 
                 row_str += cell_content
 
@@ -205,11 +206,11 @@ class GridEnvironment:
 
             # Add horizontal separator between rows (except after last row)
             if row < self.rows - 1:
-                sep = "├" + "┼".join(["─" for _ in range(self.cols)]) + "┤"
+                sep = "├" + "┼".join(["───" for _ in range(self.cols)]) + "┤"
                 print(sep.replace("┼", "┼").replace("├", "├").replace("┤", "┤"))
 
         # Bottom border
-        bottom_border = "└" + "─" * (self.cols * 2 - 1) + "┘"
+        bottom_border = "└" + "─" * (self.cols * 4 - 1) + "┘"
         print(bottom_border)
 
     def get_state(self) -> dict:

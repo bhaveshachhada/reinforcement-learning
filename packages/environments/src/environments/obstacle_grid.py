@@ -1,7 +1,7 @@
 import os
 import sys
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Set, Iterable
 import time
 
 
@@ -20,7 +20,7 @@ class GridEnvironment:
     Args:
         rows (int): Number of rows in the grid
         cols (int): Number of columns in the grid
-        obstacles (List[Tuple[int, int]]): List of (row, col) positions with obstacles
+        obstacles (Iterable[Tuple[int, int]]): List of (row, col) positions with obstacles
         start_pos (Tuple[int, int]): Starting position (row, col) for agent
     """
 
@@ -44,7 +44,7 @@ class GridEnvironment:
         self,
         rows: int,
         cols: int,
-        obstacles: List[Tuple[int, int]] = None,
+        obstacles: Iterable[Tuple[int, int]] = None,
         start_pos: Tuple[int, int] = (0, 0),
         use_unicode: bool = True
     ):

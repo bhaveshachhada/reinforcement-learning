@@ -9,3 +9,8 @@ dependencies = [
     "numpy>=2.5.1",
     "rich>=15.0.0",
 ]
+
+[tool.uv.workspace]
+members = [
+    "packages/environments",
+]

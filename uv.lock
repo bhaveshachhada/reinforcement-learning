@@ -6,6 +6,7 @@ requires-python = ">=3.14"
 members = [
     "agents",
     "environments",
+    "policies",
     "reinforcement-learning",
 ]
 
@@ -319,6 +320,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/d7/47/e4501f49c178ae1d9
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/e6/cd9575ac904136b3cbf7aa7ee819ef86eedb7274e46f230e94ea4342e729/platformdirs-4.10.0-py3-none-any.whl", hash = "sha256:fb516cdb12eb0d857d0cd85a7c57cea4d060bee4578d6cf5a14dfdf8cbf8784a", size = 22743, upload-time = "2026-05-28T03:32:52.175Z" },
 ]
+
+[[package]]
+name = "policies"
+version = "0.1.0"
+source = { editable = "packages/policies" }
 
 [[package]]
 name = "pre-commit"

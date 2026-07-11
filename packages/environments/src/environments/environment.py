@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, TypeVar, Generic
+from typing import Tuple
 
 
 class Action:
@@ -11,7 +11,6 @@ class State:
 
 
 class Reward:
-
     def __init__(self, value: float):
         self.value = value
 
@@ -19,11 +18,7 @@ class Reward:
         return f"Reward({self.value})"
 
 
-
-
-
 class Environment(ABC):
-
     @abstractmethod
     def step(self, action: Action) -> Tuple[State, Reward, bool]:
         raise NotImplementedError

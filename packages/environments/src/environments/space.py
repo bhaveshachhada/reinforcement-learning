@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, List, Union, Tuple
+from typing import TypeVar, Generic, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -7,7 +7,6 @@ T = TypeVar("T")
 
 
 class Space(Generic[T]):
-
     def __init__(self, rng: np.random.Generator):
         self.rng = rng
 
@@ -19,7 +18,6 @@ class Space(Generic[T]):
 
 
 class DiscreteSpace(Space[int]):
-
     def __init__(self, n: int, start: int, rng: np.random.Generator):
         super().__init__(rng)
         self.n = n
@@ -33,7 +31,9 @@ class DiscreteSpace(Space[int]):
 
 
 class ContinuousSpace(Space[npt.NDArray[np.float64]]):
-    def __init__(self, low: npt.ArrayLike, high: npt.ArrayLike, rng: np.random.Generator):
+    def __init__(
+        self, low: npt.ArrayLike, high: npt.ArrayLike, rng: np.random.Generator
+    ):
         super().__init__(rng)
         self.low: npt.NDArray[np.float64] = np.asarray(low, dtype=np.float64)
         self.high: npt.NDArray[np.float64] = np.asarray(high, dtype=np.float64)
@@ -43,7 +43,9 @@ class ContinuousSpace(Space[npt.NDArray[np.float64]]):
 
     def contains(self, value: npt.ArrayLike) -> bool:
         value = np.asarray(value, dtype=np.float64)
-        return value.shape == self.shape and bool((self.low <= value).all() and (value <= self.high).all())
+        return value.shape == self.shape and bool(
+            (self.low <= value).all() and (value <= self.high).all()
+        )
 
     def is_bounded(self) -> bool:
         return bool(np.isfinite(self.low).all() and np.isfinite(self.high).all())
@@ -58,9 +60,15 @@ class ContinuousSpace(Space[npt.NDArray[np.float64]]):
         unbounded = ~low_bounded & ~high_bounded
 
         value = np.empty(self.shape, dtype=np.float64)
-        value[both_bounded] = self.rng.uniform(self.low[both_bounded], self.high[both_bounded])
-        value[only_low_bounded] = self.low[only_low_bounded] + self.rng.exponential(size=only_low_bounded.sum())
-        value[only_high_bounded] = self.high[only_high_bounded] - self.rng.exponential(size=only_high_bounded.sum())
+        value[both_bounded] = self.rng.uniform(
+            self.low[both_bounded], self.high[both_bounded]
+        )
+        value[only_low_bounded] = self.low[only_low_bounded] + self.rng.exponential(
+            size=only_low_bounded.sum()
+        )
+        value[only_high_bounded] = self.high[only_high_bounded] - self.rng.exponential(
+            size=only_high_bounded.sum()
+        )
         value[unbounded] = self.rng.standard_normal(size=unbounded.sum())
 
         return value

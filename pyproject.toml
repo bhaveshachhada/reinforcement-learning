@@ -13,4 +13,10 @@ dependencies = [
 [tool.uv.workspace]
 members = [
     "packages/environments",
+    "packages/agents",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
 ]

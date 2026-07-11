@@ -16,7 +16,6 @@ def argmax(values: NDArray, rng: np.random.Generator) -> np.uint8:
 
 
 class MultiArmBanditEnvironment:
-
     def __init__(self, n_arms: int, rng: np.random.Generator):
         self.n_arms: int = n_arms
         self.rng = rng
@@ -29,11 +28,12 @@ class MultiArmBanditEnvironment:
 
 
 class EpsilonGreedyAgent:
-
     def __init__(self, n_arms: int, epsilon: float, rng: np.random.Generator):
         self.n_arms: int = n_arms
         self.q_values = np.zeros(self.n_arms)
-        self.arm_pull_count: np.ndarray[tuple[()], np.uint8] = np.zeros(self.n_arms, dtype=np.uint64)
+        self.arm_pull_count: np.ndarray[tuple[()], np.uint8] = np.zeros(
+            self.n_arms, dtype=np.uint64
+        )
         self.epsilon = epsilon
         self.rng = rng
 
@@ -43,7 +43,11 @@ class EpsilonGreedyAgent:
         new_q_value = old_q_value + (step_size * (previous_reward - old_q_value))
         self.arm_pull_count[previous_action] += 1
         self.q_values[previous_action] = new_q_value
-        return self.rng.integers(low=0, high=self.n_arms, dtype=np.uint8) if self.rng.binomial(n=1, p=self.epsilon) else argmax(self.q_values, self.rng)
+        return (
+            self.rng.integers(low=0, high=self.n_arms, dtype=np.uint8)
+            if self.rng.binomial(n=1, p=self.epsilon)
+            else argmax(self.q_values, self.rng)
+        )
 
 
 def run_agent(env: MultiArmBanditEnvironment, agent_: EpsilonGreedyAgent, steps: int):
@@ -56,8 +60,7 @@ def run_agent(env: MultiArmBanditEnvironment, agent_: EpsilonGreedyAgent, steps:
     return rewards
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     n_runs = 2000
     steps_per_run = 1000
 
@@ -73,7 +76,6 @@ if __name__ == '__main__':
 
     timer_start = time.time()
     for run in track(range(n_runs)):
-
         rng = np.random.default_rng(run)
 
         environment = MultiArmBanditEnvironment(n_arms=n_arms, rng=rng)
@@ -107,10 +109,11 @@ if __name__ == '__main__':
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_1_0_rewards[run, :] = rewards
 
-
     timer_end = time.time()
     duration = round(timer_end - timer_start, 4)
-    print(f"Took {duration:.2f} seconds for {n_runs} runs, {duration / n_runs:.2f}s / run")
+    print(
+        f"Took {duration:.2f} seconds for {n_runs} runs, {duration / n_runs:.2f}s / run"
+    )
 
     agent_name_score_mapping = [
         ("Greedy", greedy_agent_rewards),
@@ -121,7 +124,7 @@ if __name__ == '__main__':
         ("EpsilonGreedy(1.0)", epsilon_greedy_1_0_rewards),
     ]
 
-    plt.figure(figsize=(15, 5), dpi=80, facecolor='w', edgecolor='k')
+    plt.figure(figsize=(15, 5), dpi=80, facecolor="w", edgecolor="k")
     plt.plot([average_best / n_runs for _ in range(steps_per_run)], linestyle="--")
     legends = ["Best Possible"]
     for agent_type, scores in agent_name_score_mapping:

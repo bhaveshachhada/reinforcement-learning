@@ -1,12 +1,13 @@
 import os
 import sys
 from enum import Enum
-from typing import List, Tuple, Set, Iterable
+from typing import List, Tuple, Iterable
 import time
 
 
 class Direction(Enum):
     """Agent direction enumeration"""
+
     UP = 0
     RIGHT = 1
     DOWN = 2
@@ -29,7 +30,7 @@ class GridEnvironment:
         Direction.UP: "▲",
         Direction.RIGHT: "▶",
         Direction.DOWN: "▼",
-        Direction.LEFT: "◀"
+        Direction.LEFT: "◀",
     }
 
     # Fallback ASCII symbols (in case unicode doesn't render)
@@ -37,7 +38,7 @@ class GridEnvironment:
         Direction.UP: "^",
         Direction.RIGHT: ">",
         Direction.DOWN: "v",
-        Direction.LEFT: "<"
+        Direction.LEFT: "<",
     }
 
     def __init__(
@@ -46,7 +47,7 @@ class GridEnvironment:
         cols: int,
         obstacles: Iterable[Tuple[int, int]] = None,
         start_pos: Tuple[int, int] = (0, 0),
-        use_unicode: bool = True
+        use_unicode: bool = True,
     ):
         self.rows = rows
         self.cols = cols
@@ -64,9 +65,9 @@ class GridEnvironment:
     def _is_valid_pos(self, pos: Tuple[int, int]) -> bool:
         """Check if position is valid (within bounds and not an obstacle)"""
         row, col = pos
-        return (0 <= row < self.rows and
-                0 <= col < self.cols and
-                pos not in self.obstacles)
+        return (
+            0 <= row < self.rows and 0 <= col < self.cols and pos not in self.obstacles
+        )
 
     def reset(self, start_pos: Tuple[int, int] = None) -> Tuple[int, int]:
         """Reset environment to initial state"""
@@ -94,7 +95,7 @@ class GridEnvironment:
         Returns:
             (new_position, collision) - tuple with new position and whether collision occurred
         """
-        old_pos = tuple(self.agent_pos)
+        # old_pos = tuple(self.agent_pos)
         collision = False
 
         if action == 0:  # Move forward
@@ -120,7 +121,9 @@ class GridEnvironment:
         self.step_count += 1
         return tuple(self.agent_pos), collision
 
-    def _move_in_direction(self, pos: List[int], direction: Direction) -> Tuple[int, int]:
+    def _move_in_direction(
+        self, pos: List[int], direction: Direction
+    ) -> Tuple[int, int]:
         """Calculate new position after moving in a direction"""
         row, col = pos
 
@@ -163,12 +166,12 @@ class GridEnvironment:
         """Clear terminal screen"""
         if use_ansi:
             # ANSI escape codes (works on most terminals)
-            sys.stdout.write('\033[2J')  # Clear screen
-            sys.stdout.write('\033[H')  # Move cursor to home
+            sys.stdout.write("\033[2J")  # Clear screen
+            sys.stdout.write("\033[H")  # Move cursor to home
             sys.stdout.flush()
         else:
             # Fallback: platform-specific clear command
-            os.system('cls' if os.name == 'nt' else 'clear')
+            os.system("cls" if os.name == "nt" else "clear")
 
     def _draw_grid(self) -> None:
         """Draw the grid with agent and obstacles"""
@@ -216,17 +219,18 @@ class GridEnvironment:
     def get_state(self) -> dict:
         """Get current environment state"""
         return {
-            'position': tuple(self.agent_pos),
-            'direction': self.agent_direction,
-            'grid_shape': (self.rows, self.cols),
-            'obstacles': self.obstacles,
-            'step': self.step_count
+            "position": tuple(self.agent_pos),
+            "direction": self.agent_direction,
+            "grid_shape": (self.rows, self.cols),
+            "obstacles": self.obstacles,
+            "step": self.step_count,
         }
 
 
 # ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
+
 
 def example_basic():
     """Basic example of grid environment"""
@@ -236,12 +240,7 @@ def example_basic():
 
     # Create environment: 5x6 grid with obstacles
     obstacles = [(1, 2), (2, 2), (3, 2), (2, 4)]
-    env = GridEnvironment(
-        rows=5,
-        cols=6,
-        obstacles=obstacles,
-        start_pos=(0, 0)
-    )
+    env = GridEnvironment(rows=5, cols=6, obstacles=obstacles, start_pos=(0, 0))
 
     env.render()
     input("\nPress Enter to continue...")
@@ -281,18 +280,9 @@ def example_interactive():
     print("  q: Quit\n")
 
     # Create a larger environment with more obstacles
-    obstacles = [
-        (2, 1), (2, 2), (2, 3),
-        (4, 4), (4, 5), (4, 6),
-        (1, 5)
-    ]
+    obstacles = [(2, 1), (2, 2), (2, 3), (4, 4), (4, 5), (4, 6), (1, 5)]
 
-    env = GridEnvironment(
-        rows=7,
-        cols=8,
-        obstacles=obstacles,
-        start_pos=(3, 0)
-    )
+    env = GridEnvironment(rows=7, cols=8, obstacles=obstacles, start_pos=(3, 0))
 
     env.render()
 
@@ -300,7 +290,7 @@ def example_interactive():
         try:
             user_input = input("\nEnter action (0/1/2/3/q): ").strip().lower()
 
-            if user_input == 'q':
+            if user_input == "q":
                 print("Exiting...")
                 break
 
@@ -331,7 +321,7 @@ def example_with_fallback():
         cols=6,
         obstacles=obstacles,
         start_pos=(0, 0),
-        use_unicode=False  # Use ASCII symbols
+        use_unicode=False,  # Use ASCII symbols
     )
 
     env.render()

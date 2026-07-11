@@ -1,18 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, TypeVar, Generic
+from typing import Tuple, TypeVar, Generic, Union
 
 from packages.environments.src.environments.space import Space
 
 ObsType = TypeVar("ObsType")
 ActType = TypeVar("ActType")
-
-
-class Reward:
-    def __init__(self, value: float):
-        self.value = value
-
-    def __repr__(self):
-        return f"Reward({self.value})"
+type RewardType = Union[int, float]
 
 
 class Environment(ABC, Generic[ObsType, ActType]):
@@ -20,7 +13,7 @@ class Environment(ABC, Generic[ObsType, ActType]):
     observation_space: Space[ObsType]
 
     @abstractmethod
-    def step(self, action: ActType) -> Tuple[ObsType, Reward, bool]:
+    def step(self, action: ActType) -> Tuple[ObsType, RewardType, bool]:
         raise NotImplementedError
 
     @abstractmethod

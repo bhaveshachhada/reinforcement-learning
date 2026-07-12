@@ -1,8 +1,13 @@
 import os
 import sys
 from enum import Enum
-from typing import List, Tuple, Iterable
+from typing import Tuple, Iterable
 import time
+
+import numpy as np
+
+from packages.environments.src.environments.environment import Environment
+from packages.environments.src.environments.space import DiscreteSpace
 
 
 class Direction(Enum):
@@ -14,7 +19,7 @@ class Direction(Enum):
     LEFT = 3
 
 
-class GridEnvironment:
+class GridEnvironment(Environment[int, int]):
     """
     A configurable terminal-based grid environment for RL agents.
 
@@ -45,8 +50,10 @@ class GridEnvironment:
         self,
         rows: int,
         cols: int,
+        rng: np.random.Generator,
+        start_pos: Tuple[int, int],
+        goal_pos: Tuple[int, int],
         obstacles: Iterable[Tuple[int, int]] = None,
-        start_pos: Tuple[int, int] = (0, 0),
         use_unicode: bool = True,
     ):
         self.rows = rows
@@ -56,11 +63,18 @@ class GridEnvironment:
         # Validate start position
         if not self._is_valid_pos(start_pos):
             raise ValueError(f"Invalid start position {start_pos}")
+        if not self._is_valid_pos(goal_pos):
+            raise ValueError(f"Invalid goal position {goal_pos}")
 
-        self.agent_pos = list(start_pos)  # [row, col]
+        self.agent_pos = start_pos
+        self.goal_pos = goal_pos
         self.agent_direction = Direction.RIGHT
         self.use_unicode = use_unicode
         self.step_count = 0
+        self.rng = rng
+
+        self.action_space = DiscreteSpace(4, 0, self.rng)
+        self.observation_space = DiscreteSpace(self.rows * self.cols, 0, self.rng)
 
     def _is_valid_pos(self, pos: Tuple[int, int]) -> bool:
         """Check if position is valid (within bounds and not an obstacle)"""
@@ -69,20 +83,35 @@ class GridEnvironment:
             0 <= row < self.rows and 0 <= col < self.cols and pos not in self.obstacles
         )
 
-    def reset(self, start_pos: Tuple[int, int] = None) -> Tuple[int, int]:
+    def _is_position_in_bounds(self, pos: Tuple[int, int]) -> bool:
+        """Check if position is valid (within bounds)"""
+        row, col = pos
+        return 0 <= row < self.rows and 0 <= col < self.cols
+
+    def _is_colliding_with_obstacle(self, pos: Tuple[int, int]) -> bool:
+        """Check if position is colliding with obstacle"""
+        return pos in self.obstacles
+
+    def state_from_position(self, pos: Tuple[int, int]) -> int:
+        assert len(pos) == 2, "Position must be an iterable of (row, col)"
+        row, col = pos
+        return row * self.cols + col
+
+    def reset(self, start_pos: Tuple[int, int] = None) -> int:
         """Reset environment to initial state"""
         if start_pos:
             if not self._is_valid_pos(start_pos):
                 raise ValueError(f"Invalid start position {start_pos}")
-            self.agent_pos = list(start_pos)
+            self.agent_pos = tuple(start_pos)
         else:
-            self.agent_pos = [0, 0]
+            self.agent_pos = (0, 0)
 
         self.agent_direction = Direction.RIGHT
         self.step_count = 0
-        return tuple(self.agent_pos)
 
-    def step(self, action: int) -> Tuple[Tuple[int, int], bool]:
+        return self.state_from_position(self.agent_pos)
+
+    def step(self, action: int) -> Tuple[int, int, bool]:
         """
         Execute action and return new position and collision flag
 
@@ -93,10 +122,10 @@ class GridEnvironment:
             3: Move Backward
 
         Returns:
-            (new_position, collision) - tuple with new position and whether collision occurred
+            (new_position, reward, is_terminal) - tuple with new position, reward, is_terminal
         """
-        # old_pos = tuple(self.agent_pos)
-        collision = False
+        terminal = False
+        reward = 0
 
         if action == 0:  # Move forward
             new_pos = self._move_in_direction(self.agent_pos, self.agent_direction)
@@ -113,16 +142,22 @@ class GridEnvironment:
             raise ValueError(f"Invalid action {action}")
 
         # Check if new position is valid
-        if self._is_valid_pos(new_pos):
-            self.agent_pos = list(new_pos)
-        else:
-            collision = True
+        if self._is_colliding_with_obstacle(new_pos):
+            reward = -1
+            terminal = True
+
+        elif new_pos == self.goal_pos:
+            reward = 1
+            terminal = True
+        elif self._is_position_in_bounds(new_pos):
+            self.agent_pos = new_pos
 
         self.step_count += 1
-        return tuple(self.agent_pos), collision
+        return self.state_from_position(new_pos), reward, terminal
 
+    @staticmethod
     def _move_in_direction(
-        self, pos: List[int], direction: Direction
+        pos: Tuple[int, int], direction: Direction
     ) -> Tuple[int, int]:
         """Calculate new position after moving in a direction"""
         row, col = pos
@@ -136,7 +171,7 @@ class GridEnvironment:
         elif direction == Direction.RIGHT:
             col += 1
 
-        return (row, col)
+        return row, col
 
     def render(self, use_ansi_clear: bool = True) -> None:
         """
@@ -321,6 +356,8 @@ def example_with_fallback():
         cols=6,
         obstacles=obstacles,
         start_pos=(0, 0),
+        goal_pos=(4, 4),
+        rng=np.random.default_rng(1),
         use_unicode=False,  # Use ASCII symbols
     )
 
@@ -336,7 +373,7 @@ def example_with_fallback():
 
 
 if __name__ == "__main__":
-    import sys
+    # import sys
 
     print("\nSelect an example:")
     print("1. Basic (automated demo)")

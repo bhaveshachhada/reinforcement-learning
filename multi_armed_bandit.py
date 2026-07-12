@@ -1,9 +1,21 @@
 import time
+from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
 from rich.progress import track
+
+from packages.agents.src.agents.agent import Agent
+from packages.environments.src.environments.multi_armed_bandit import (
+    MultiArmedBanditEnvironment,
+)
+from packages.environments.src.environments.space import DiscreteSpace
+from packages.policies.src.policies.policy import (
+    Policy,
+    GreedyPolicy,
+    EpsilonGreedyPolicy,
+)
 
 
 def argmax(values: NDArray, rng: np.random.Generator) -> np.uint8:
@@ -15,47 +27,76 @@ def argmax(values: NDArray, rng: np.random.Generator) -> np.uint8:
     return rng.choice(np.flatnonzero(values == values.max()))
 
 
-class MultiArmBanditEnvironment:
-    def __init__(self, n_arms: int, rng: np.random.Generator):
-        self.n_arms: int = n_arms
-        self.rng = rng
+# class MultiArmBanditEnvironment:
+#     def __init__(self, n_arms: int, rng: np.random.Generator):
+#         self.n_arms: int = n_arms
+#         self.rng = rng
+#
+#         # random reward mean values with mean 0, variance 1
+#         self.reward_mean_values = self.rng.normal(loc=20, scale=5, size=(n_arms,))
+#
+#     def env_step(self, action: int):
+#         return self.reward_mean_values[action] + self.rng.normal(loc=0, scale=3)
 
-        # random reward mean values with mean 0, variance 1
-        self.reward_mean_values = self.rng.normal(loc=20, scale=5, size=(n_arms,))
 
-    def env_step(self, action: int):
-        return self.reward_mean_values[action] + self.rng.normal(loc=0, scale=3)
+class MultiArmedBanditAgent(Agent[None, int]):
+    def __init__(
+        self,
+        env: MultiArmedBanditEnvironment,
+        policy: Policy,
+        q_values: np.ndarray[tuple[int], np.float64],
+    ):
+        self.env = env
+        self.policy = policy
 
-
-class EpsilonGreedyAgent:
-    def __init__(self, n_arms: int, epsilon: float, rng: np.random.Generator):
-        self.n_arms: int = n_arms
-        self.q_values = np.zeros(self.n_arms)
-        self.arm_pull_count: np.ndarray[tuple[()], np.uint8] = np.zeros(
+        self.n_arms = env.n_arms
+        self.q_values = q_values
+        self.arm_pull_count: np.ndarray[tuple[int], np.uint8] = np.zeros(
             self.n_arms, dtype=np.uint64
         )
-        self.epsilon = epsilon
         self.rng = rng
 
-    def agent_step(self, previous_action: int, previous_reward: float) -> int:
-        old_q_value = self.q_values[previous_action]
-        step_size = 1 / max(1, self.arm_pull_count[previous_action])
-        new_q_value = old_q_value + (step_size * (previous_reward - old_q_value))
-        self.arm_pull_count[previous_action] += 1
-        self.q_values[previous_action] = new_q_value
-        return (
-            self.rng.integers(low=0, high=self.n_arms, dtype=np.uint8)
-            if self.rng.binomial(n=1, p=self.epsilon)
-            else argmax(self.q_values, self.rng)
-        )
+    def choose_action(self, state: None) -> int:
+        return self.policy.choose_action(state)
+
+    def step(self, action: int, reward: Union[int, float]):
+        old_q_value = self.q_values[action]
+        step_size = 1 / max(1, self.arm_pull_count[action])
+        new_q_value = old_q_value + (step_size * (reward - old_q_value))
+        self.arm_pull_count[action] += 1
+        self.q_values[action] = new_q_value
 
 
-def run_agent(env: MultiArmBanditEnvironment, agent_: EpsilonGreedyAgent, steps: int):
+# class EpsilonGreedyAgent:
+#     def __init__(self, n_arms: int, epsilon: float, rng: np.random.Generator):
+#         self.n_arms: int = n_arms
+#         self.q_values = np.zeros(self.n_arms)
+#         self.arm_pull_count: np.ndarray[tuple[()], np.uint8] = np.zeros(
+#             self.n_arms, dtype=np.uint64
+#         )
+#         self.epsilon = epsilon
+#         self.rng = rng
+#
+#     def agent_step(self, previous_action: int, previous_reward: float) -> int:
+#         old_q_value = self.q_values[previous_action]
+#         step_size = 1 / max(1, self.arm_pull_count[previous_action])
+#         new_q_value = old_q_value + (step_size * (previous_reward - old_q_value))
+#         self.arm_pull_count[previous_action] += 1
+#         self.q_values[previous_action] = new_q_value
+#         return (
+#             self.rng.integers(low=0, high=self.n_arms, dtype=np.uint8)
+#             if self.rng.binomial(n=1, p=self.epsilon)
+#             else argmax(self.q_values, self.rng)
+#         )
+
+
+def run_agent(env: MultiArmedBanditEnvironment, agent_: Agent, steps: int):
     rewards = np.zeros((steps,))
     selected_action, reward = 0, 0
     for step in range(steps):
-        selected_action = agent_.agent_step(selected_action, reward)
-        reward = env.env_step(selected_action)
+        agent_.step(selected_action, reward)
+        selected_action = agent_.choose_action(None)
+        _, reward, _ = env.step(selected_action)
         rewards[step] = reward
     return rewards
 
@@ -76,36 +117,92 @@ if __name__ == "__main__":
 
     timer_start = time.time()
     for run in track(range(n_runs)):
+        # logger.info("Running {} run...".format(run))
+
         rng = np.random.default_rng(run)
 
-        environment = MultiArmBanditEnvironment(n_arms=n_arms, rng=rng)
+        environment = MultiArmedBanditEnvironment(n_arms=n_arms, rng=rng)
         average_best += np.max(environment.reward_mean_values)
+
+        # common objects
+        action_space = DiscreteSpace(n_arms, start=0, rng=rng)
 
         # ~~~~~~~~~~~~~ GREEDY AGENT ~~~~~~~~~~~~~ #
         # greedy agent is special case of epsilon greedy with epsilon = 0
-        agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.0, rng=rng)
-        rewards = run_agent(environment, agent, steps_per_run)
-        greedy_agent_rewards[run, :] = rewards
+        # agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.0, rng=rng)
+        # logger.info("Running greedy policy")
+        q_values = np.zeros((n_arms,), dtype=np.float64)
+        greedy_policy = GreedyPolicy(
+            action_space, q_value_fn=lambda state, action: q_values[action], rng=rng
+        )
+        agent = MultiArmedBanditAgent(environment, greedy_policy, q_values)
+        rewards_ = run_agent(environment, agent, steps_per_run)
+        greedy_agent_rewards[run, :] = rewards_
 
         # ~~~~~~~~~~~~~ EPSILON GREEDY AGENTS ~~~~~~~~~~~~~ #
-        agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.1, rng=rng)
+        # agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.1, rng=rng)
+        # logger.info("Running epsilon(0.1)")
+        q_values = np.zeros((n_arms,), dtype=np.float64)
+        epsilon_greedy_policy_0_1 = EpsilonGreedyPolicy(
+            action_space,
+            q_value_fn=lambda state, action: q_values[action],
+            rng=rng,
+            epsilon=0.1,
+        )
+        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_1, q_values)
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_1_rewards[run, :] = rewards
 
-        agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.3, rng=rng)
+        # agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.3, rng=rng)
+        # logger.info("Running epsilon(0.3)")
+        q_values = np.zeros((n_arms,), dtype=np.float64)
+        epsilon_greedy_policy_0_3 = EpsilonGreedyPolicy(
+            action_space,
+            q_value_fn=lambda state, action: q_values[action],
+            rng=rng,
+            epsilon=0.3,
+        )
+        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_3, q_values)
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_3_rewards[run, :] = rewards
 
-        agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.5, rng=rng)
+        # agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.5, rng=rng)
+        # logger.info("Running epsilon(0.5)")
+        q_values = np.zeros((n_arms,), dtype=np.float64)
+        epsilon_greedy_policy_0_5 = EpsilonGreedyPolicy(
+            action_space,
+            q_value_fn=lambda state, action: q_values[action],
+            rng=rng,
+            epsilon=0.5,
+        )
+        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_5, q_values)
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_5_rewards[run, :] = rewards
 
-        agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.7, rng=rng)
+        # agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=0.7, rng=rng)
+        # logger.info("Running epsilon(0.7)")
+        q_values = np.zeros((n_arms,), dtype=np.float64)
+        epsilon_greedy_policy_0_7 = EpsilonGreedyPolicy(
+            action_space,
+            q_value_fn=lambda state, action: q_values[action],
+            rng=rng,
+            epsilon=0.7,
+        )
+        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_7, q_values)
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_7_rewards[run, :] = rewards
 
         # epsilon = 1 means complete random walk amongst actions
-        agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=1, rng=rng)
+        # agent = EpsilonGreedyAgent(n_arms=n_arms, epsilon=1, rng=rng)
+        # logger.info("Running epsilon(1.0)")
+        q_values = np.zeros((n_runs,), dtype=np.float64)
+        epsilon_greedy_policy_1_0 = EpsilonGreedyPolicy(
+            action_space,
+            q_value_fn=lambda state, action: q_values[action],
+            rng=rng,
+            epsilon=1.0,
+        )
+        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_1_0, q_values)
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_1_0_rewards[run, :] = rewards
 

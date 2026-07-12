@@ -27,18 +27,6 @@ def argmax(values: NDArray, rng: np.random.Generator) -> np.uint8:
     return rng.choice(np.flatnonzero(values == values.max()))
 
 
-# class MultiArmBanditEnvironment:
-#     def __init__(self, n_arms: int, rng: np.random.Generator):
-#         self.n_arms: int = n_arms
-#         self.rng = rng
-#
-#         # random reward mean values with mean 0, variance 1
-#         self.reward_mean_values = self.rng.normal(loc=20, scale=5, size=(n_arms,))
-#
-#     def env_step(self, action: int):
-#         return self.reward_mean_values[action] + self.rng.normal(loc=0, scale=3)
-
-
 class MultiArmedBanditAgent(Agent[None, int]):
     def __init__(
         self,
@@ -65,29 +53,6 @@ class MultiArmedBanditAgent(Agent[None, int]):
         new_q_value = old_q_value + (step_size * (reward - old_q_value))
         self.arm_pull_count[action] += 1
         self.q_values[action] = new_q_value
-
-
-# class EpsilonGreedyAgent:
-#     def __init__(self, n_arms: int, epsilon: float, rng: np.random.Generator):
-#         self.n_arms: int = n_arms
-#         self.q_values = np.zeros(self.n_arms)
-#         self.arm_pull_count: np.ndarray[tuple[()], np.uint8] = np.zeros(
-#             self.n_arms, dtype=np.uint64
-#         )
-#         self.epsilon = epsilon
-#         self.rng = rng
-#
-#     def agent_step(self, previous_action: int, previous_reward: float) -> int:
-#         old_q_value = self.q_values[previous_action]
-#         step_size = 1 / max(1, self.arm_pull_count[previous_action])
-#         new_q_value = old_q_value + (step_size * (previous_reward - old_q_value))
-#         self.arm_pull_count[previous_action] += 1
-#         self.q_values[previous_action] = new_q_value
-#         return (
-#             self.rng.integers(low=0, high=self.n_arms, dtype=np.uint8)
-#             if self.rng.binomial(n=1, p=self.epsilon)
-#             else argmax(self.q_values, self.rng)
-#         )
 
 
 def run_agent(env: MultiArmedBanditEnvironment, agent_: Agent, steps: int):

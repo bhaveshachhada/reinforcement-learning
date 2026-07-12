@@ -1,5 +1,4 @@
 import time
-from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,12 +6,12 @@ from numpy.typing import NDArray
 from rich.progress import track
 
 from packages.agents.src.agents.agent import Agent
+from packages.agents.src.agents.multi_armed_bandit import MultiArmedBanditAgent
 from packages.environments.src.environments.multi_armed_bandit import (
     MultiArmedBanditEnvironment,
 )
 from packages.environments.src.environments.space import DiscreteSpace
 from packages.policies.src.policies.policy import (
-    Policy,
     GreedyPolicy,
     EpsilonGreedyPolicy,
 )
@@ -25,34 +24,6 @@ def argmax(values: NDArray, rng: np.random.Generator) -> np.uint8:
     :return: same as argmax, but when there is tie, gives random among all indices with max value
     """
     return rng.choice(np.flatnonzero(values == values.max()))
-
-
-class MultiArmedBanditAgent(Agent[None, int]):
-    def __init__(
-        self,
-        env: MultiArmedBanditEnvironment,
-        policy: Policy,
-        q_values: np.ndarray[tuple[int], np.float64],
-    ):
-        self.env = env
-        self.policy = policy
-
-        self.n_arms = env.n_arms
-        self.q_values = q_values
-        self.arm_pull_count: np.ndarray[tuple[int], np.uint8] = np.zeros(
-            self.n_arms, dtype=np.uint64
-        )
-        self.rng = rng
-
-    def choose_action(self, state: None) -> int:
-        return self.policy.choose_action(state)
-
-    def step(self, action: int, reward: Union[int, float]):
-        old_q_value = self.q_values[action]
-        step_size = 1 / max(1, self.arm_pull_count[action])
-        new_q_value = old_q_value + (step_size * (reward - old_q_value))
-        self.arm_pull_count[action] += 1
-        self.q_values[action] = new_q_value
 
 
 def run_agent(env: MultiArmedBanditEnvironment, agent_: Agent, steps: int):
@@ -100,7 +71,7 @@ if __name__ == "__main__":
         greedy_policy = GreedyPolicy(
             action_space, q_value_fn=lambda state, action: q_values[action], rng=rng
         )
-        agent = MultiArmedBanditAgent(environment, greedy_policy, q_values)
+        agent = MultiArmedBanditAgent(environment, greedy_policy, q_values, rng=rng)
         rewards_ = run_agent(environment, agent, steps_per_run)
         greedy_agent_rewards[run, :] = rewards_
 
@@ -114,7 +85,9 @@ if __name__ == "__main__":
             rng=rng,
             epsilon=0.1,
         )
-        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_1, q_values)
+        agent = MultiArmedBanditAgent(
+            environment, epsilon_greedy_policy_0_1, q_values, rng=rng
+        )
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_1_rewards[run, :] = rewards
 
@@ -127,7 +100,9 @@ if __name__ == "__main__":
             rng=rng,
             epsilon=0.3,
         )
-        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_3, q_values)
+        agent = MultiArmedBanditAgent(
+            environment, epsilon_greedy_policy_0_3, q_values, rng=rng
+        )
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_3_rewards[run, :] = rewards
 
@@ -140,7 +115,9 @@ if __name__ == "__main__":
             rng=rng,
             epsilon=0.5,
         )
-        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_5, q_values)
+        agent = MultiArmedBanditAgent(
+            environment, epsilon_greedy_policy_0_5, q_values, rng=rng
+        )
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_5_rewards[run, :] = rewards
 
@@ -153,7 +130,9 @@ if __name__ == "__main__":
             rng=rng,
             epsilon=0.7,
         )
-        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_0_7, q_values)
+        agent = MultiArmedBanditAgent(
+            environment, epsilon_greedy_policy_0_7, q_values, rng=rng
+        )
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_0_7_rewards[run, :] = rewards
 
@@ -167,7 +146,9 @@ if __name__ == "__main__":
             rng=rng,
             epsilon=1.0,
         )
-        agent = MultiArmedBanditAgent(environment, epsilon_greedy_policy_1_0, q_values)
+        agent = MultiArmedBanditAgent(
+            environment, epsilon_greedy_policy_1_0, q_values, rng=rng
+        )
         rewards = run_agent(environment, agent, steps_per_run)
         epsilon_greedy_1_0_rewards[run, :] = rewards
 

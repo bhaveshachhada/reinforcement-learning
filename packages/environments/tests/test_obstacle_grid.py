@@ -158,14 +158,14 @@ class TestStepCollisionAndGoal:
         assert terminal is False
         assert state == (0, 1, Direction.RIGHT.value)
 
-    def test_turning_on_goal_cell_does_not_terminate(self):
+    def test_turning_to_face_goal_direction_on_goal_cell_terminates(self):
         env = make_env(
             start_pos=(2, 2, Direction.UP.value),
             goal_pos=(2, 2, Direction.RIGHT.value),
         )
         state, reward, terminal = env.step(1)  # turn right: UP -> RIGHT
-        assert reward == 0
-        assert terminal is False
+        assert reward == 1
+        assert terminal is True
         assert state == (2, 2, Direction.RIGHT.value)
 
 

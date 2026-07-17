@@ -134,10 +134,10 @@ class GridEnvironment(Environment[Tuple[int, int, int], int]):
             )
         elif action == 1:  # Turn right
             self.agent_direction = Direction((self.agent_direction + 1) % 4)
-            new_pos = tuple(self.agent_pos)
+            new_pos = (self.agent_pos[0], self.agent_pos[1])
         elif action == 2:  # Turn left
             self.agent_direction = Direction((self.agent_direction - 1) % 4)
-            new_pos = tuple(self.agent_pos)
+            new_pos = (self.agent_pos[0], self.agent_pos[1])
         elif action == 3:  # Move backward
             opposite_dir = Direction((self.agent_direction + 2) % 4)
             new_pos = self._move_in_direction(

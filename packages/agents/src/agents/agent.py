@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Union
+from typing import Optional, TypeVar, Generic, Union
 
 from packages.environments.src.environments.environment import Environment
 from packages.policies.src.policies.policy import Policy
@@ -14,7 +14,15 @@ class Agent(ABC, Generic[ObsType, ActType]):
     policy: Policy
 
     @abstractmethod
-    def step(self, action: ActType, reward: Union[int, float]):
+    def step(
+        self,
+        state: ObsType,
+        action: ActType,
+        reward: Union[int, float],
+        next_state: ObsType,
+        next_action: Optional[ActType] = None,
+        done: bool = False,
+    ):
         raise NotImplementedError
 
     def choose_action(self, state: ObsType) -> ActType:

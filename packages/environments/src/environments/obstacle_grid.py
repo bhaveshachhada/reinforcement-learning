@@ -293,7 +293,14 @@ def example_basic():
 
     # Create environment: 5x6 grid with obstacles
     obstacles = [(1, 2), (2, 2), (3, 2), (2, 4)]
-    env = GridEnvironment(rows=5, cols=6, obstacles=obstacles, start_pos=(0, 0))
+    env = GridEnvironment(
+        rows=5,
+        cols=6,
+        obstacles=obstacles,
+        start_pos=(0, 0, Direction.RIGHT.value),
+        goal_pos=(4, 4, Direction.UP.value),
+        rng=np.random.default_rng(1),
+    )
 
     env.render()
     input("\nPress Enter to continue...")
@@ -310,11 +317,12 @@ def example_basic():
     ]
 
     for action in actions:
-        pos, collision = env.step(action)
+        pos, reward, is_terminal = env.step(action)
         env.render()
 
-        if collision:
-            print("\n⚠️  Collision detected!")
+        if is_terminal:
+            print("\n⚠️  Episode finished with reward={}!".format(reward))
+            break
 
         time.sleep(1)  # Pause between steps for visibility
         input("Press Enter for next step...")
@@ -335,7 +343,14 @@ def example_interactive():
     # Create a larger environment with more obstacles
     obstacles = [(2, 1), (2, 2), (2, 3), (4, 4), (4, 5), (4, 6), (1, 5)]
 
-    env = GridEnvironment(rows=7, cols=8, obstacles=obstacles, start_pos=(3, 0))
+    env = GridEnvironment(
+        rows=7,
+        cols=8,
+        obstacles=obstacles,
+        start_pos=(3, 0, Direction.UP.value),
+        goal_pos=(5, 5, Direction.UP.value),
+        rng=np.random.default_rng(1),
+    )
 
     env.render()
 
@@ -352,11 +367,12 @@ def example_interactive():
                 print("Invalid action! Use 0, 1, 2, or 3")
                 continue
 
-            pos, collision = env.step(action)
+            pos, reward, is_terminal = env.step(action)
             env.render()
 
-            if collision:
-                print("\n⚠️  Collision detected! (tried to hit wall/obstacle)")
+            if is_terminal:
+                print("\n⚠️  Episode finished with reward={}!".format(reward))
+                break
 
         except ValueError:
             print("Invalid input! Enter a number (0-3) or 'q'")
@@ -373,8 +389,8 @@ def example_with_fallback():
         rows=5,
         cols=6,
         obstacles=obstacles,
-        start_pos=(0, 0),
-        goal_pos=(4, 4),
+        start_pos=(0, 0, Direction.RIGHT.value),
+        goal_pos=(4, 4, Direction.UP.value),
         rng=np.random.default_rng(1),
         use_unicode=False,  # Use ASCII symbols
     )

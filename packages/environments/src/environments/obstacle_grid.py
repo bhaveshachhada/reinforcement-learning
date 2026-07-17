@@ -1,6 +1,6 @@
 import os
 import sys
-from enum import Enum
+from enum import IntEnum
 from typing import Tuple, Iterable
 import time
 
@@ -10,7 +10,7 @@ from packages.environments.src.environments.environment import Environment
 from packages.environments.src.environments.space import DiscreteSpace
 
 
-class Direction(Enum):
+class Direction(IntEnum):
     """Agent direction enumeration"""
 
     UP = 0
@@ -19,7 +19,7 @@ class Direction(Enum):
     LEFT = 3
 
 
-class GridEnvironment(Environment[int, int]):
+class GridEnvironment(Environment[Tuple[int, int, int], int]):
     """
     A configurable terminal-based grid environment for RL agents.
 
@@ -51,8 +51,8 @@ class GridEnvironment(Environment[int, int]):
         rows: int,
         cols: int,
         rng: np.random.Generator,
-        start_pos: Tuple[int, int],
-        goal_pos: Tuple[int, int],
+        start_pos: Tuple[int, int, int],
+        goal_pos: Tuple[int, int, int],
         obstacles: Iterable[Tuple[int, int]] = None,
         use_unicode: bool = True,
     ):
@@ -61,14 +61,14 @@ class GridEnvironment(Environment[int, int]):
         self.obstacles = set(obstacles) if obstacles else set()
 
         # Validate start position
-        if not self._is_valid_pos(start_pos):
+        if not self._is_valid_pos((start_pos[0], start_pos[1])):
             raise ValueError(f"Invalid start position {start_pos}")
-        if not self._is_valid_pos(goal_pos):
+        if not self._is_valid_pos((goal_pos[0], goal_pos[1])):
             raise ValueError(f"Invalid goal position {goal_pos}")
 
         self.agent_pos = start_pos
         self.goal_pos = goal_pos
-        self.agent_direction = Direction.RIGHT
+        self.agent_direction = Direction(self.agent_pos[-1])
         self.use_unicode = use_unicode
         self.step_count = 0
         self.rng = rng
@@ -97,21 +97,22 @@ class GridEnvironment(Environment[int, int]):
         row, col = pos
         return row * self.cols + col
 
-    def reset(self, start_pos: Tuple[int, int] = None) -> int:
+    def reset(self, start_pos: Tuple[int, int, int] = None) -> Tuple[int, int, int]:
         """Reset environment to initial state"""
         if start_pos:
-            if not self._is_valid_pos(start_pos):
+            if not self._is_valid_pos((start_pos[0], start_pos[1])):
                 raise ValueError(f"Invalid start position {start_pos}")
             self.agent_pos = tuple(start_pos)
         else:
-            self.agent_pos = (0, 0)
+            self.agent_pos = (0, 0, 0)
 
-        self.agent_direction = Direction.RIGHT
+        self.agent_direction = Direction(self.agent_pos[-1])
         self.step_count = 0
 
-        return self.state_from_position(self.agent_pos)
+        print(f"\033[33m[env reset]\033[0m: {self.agent_pos=}")
+        return self.agent_pos
 
-    def step(self, action: int) -> Tuple[int, int, bool]:
+    def step(self, action: int) -> Tuple[Tuple[int, int, int], int, bool]:
         """
         Execute action and return new position and collision flag
 
@@ -128,16 +129,20 @@ class GridEnvironment(Environment[int, int]):
         reward = 0
 
         if action == 0:  # Move forward
-            new_pos = self._move_in_direction(self.agent_pos, self.agent_direction)
+            new_pos = self._move_in_direction(
+                (self.agent_pos[0], self.agent_pos[1]), self.agent_direction
+            )
         elif action == 1:  # Turn right
-            self.agent_direction = Direction((self.agent_direction.value + 1) % 4)
+            self.agent_direction = Direction((self.agent_direction + 1) % 4)
             new_pos = tuple(self.agent_pos)
         elif action == 2:  # Turn left
-            self.agent_direction = Direction((self.agent_direction.value - 1) % 4)
+            self.agent_direction = Direction((self.agent_direction - 1) % 4)
             new_pos = tuple(self.agent_pos)
         elif action == 3:  # Move backward
-            opposite_dir = Direction((self.agent_direction.value + 2) % 4)
-            new_pos = self._move_in_direction(self.agent_pos, opposite_dir)
+            opposite_dir = Direction((self.agent_direction + 2) % 4)
+            new_pos = self._move_in_direction(
+                (self.agent_pos[0], self.agent_pos[1]), opposite_dir
+            )
         else:
             raise ValueError(f"Invalid action {action}")
 
@@ -146,14 +151,27 @@ class GridEnvironment(Environment[int, int]):
             reward = -1
             terminal = True
 
-        elif new_pos == self.goal_pos:
+        elif (
+            new_pos == self.goal_pos[:-1]
+            and self.agent_direction.value == self.goal_pos[-1]
+        ):
             reward = 1
             terminal = True
-        elif self._is_position_in_bounds(new_pos):
+            self.agent_pos = new_pos
+
+        elif self._is_position_in_bounds((new_pos[0], new_pos[1])):
+            print(f"\033[33m[env step]\033[0m: {new_pos=} is in bounds")
             self.agent_pos = new_pos
 
         self.step_count += 1
-        return self.state_from_position(new_pos), reward, terminal
+
+        new_state: Tuple[int, int, int] = (
+            self.agent_pos[0],
+            self.agent_pos[1],
+            self.agent_direction.value,
+        )
+        print(f"\033[33m[env step]\033[0m: {new_state=}, {reward=}, {terminal=}")
+        return new_state, reward, terminal
 
     @staticmethod
     def _move_in_direction(

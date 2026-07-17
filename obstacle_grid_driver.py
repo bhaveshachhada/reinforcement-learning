@@ -4,7 +4,10 @@ from typing import Tuple
 import numpy as np
 
 from packages.agents.src.agents.sarsa import Sarsa
-from packages.environments.src.environments.obstacle_grid import GridEnvironment
+from packages.environments.src.environments.obstacle_grid import (
+    Direction,
+    GridEnvironment,
+)
 from packages.environments.src.environments.space import DiscreteSpace
 from packages.policies.src.policies.policy import EpsilonGreedyPolicy
 
@@ -21,8 +24,8 @@ def example_basic():
         rows=5,
         cols=6,
         obstacles=obstacles,
-        start_pos=(0, 0),
-        goal_pos=(4, 4),
+        start_pos=(0, 0, Direction.RIGHT.value),
+        goal_pos=(4, 4, Direction.UP.value),
         rng=np.random.default_rng(1),
     )
 
@@ -71,8 +74,8 @@ def example_interactive():
         rows=7,
         cols=8,
         obstacles=obstacles,
-        start_pos=(3, 0),
-        goal_pos=(5, 5),
+        start_pos=(3, 0, Direction.UP.value),
+        goal_pos=(5, 5, Direction.UP.value),
         rng=np.random.default_rng(1),
     )
 
@@ -116,8 +119,8 @@ def example_with_fallback():
         rows=5,
         cols=6,
         obstacles=obstacles,
-        start_pos=(0, 0),
-        goal_pos=(4, 4),
+        start_pos=(0, 0, Direction.RIGHT.value),
+        goal_pos=(4, 4, Direction.UP.value),
         rng=np.random.default_rng(1),
         use_unicode=False,  # Use ASCII symbols
     )

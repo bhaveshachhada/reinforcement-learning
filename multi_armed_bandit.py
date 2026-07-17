@@ -30,7 +30,7 @@ def run_agent(env: MultiArmedBanditEnvironment, agent_: Agent, steps: int):
     rewards = np.zeros((steps,))
     selected_action, reward = 0, 0
     for step in range(steps):
-        agent_.step(selected_action, reward)
+        agent_.step(None, selected_action, reward, None)
         selected_action = agent_.choose_action(None)
         _, reward, _ = env.step(selected_action)
         rewards[step] = reward

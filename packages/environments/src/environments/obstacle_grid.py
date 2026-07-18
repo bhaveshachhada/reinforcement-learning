@@ -126,7 +126,7 @@ class GridEnvironment(Environment[Tuple[int, int, int], int]):
             (new_position, reward, is_terminal) - tuple with new position, reward, is_terminal
         """
         terminal = False
-        reward = 0
+        reward = -1
 
         if action == 0:  # Move forward
             new_pos = self._move_in_direction(
@@ -148,7 +148,7 @@ class GridEnvironment(Environment[Tuple[int, int, int], int]):
 
         # Check if new position is valid
         if self._is_colliding_with_obstacle(new_pos):
-            reward = -1
+            reward = -10
             terminal = True
 
         elif (
@@ -243,7 +243,7 @@ class GridEnvironment(Environment[Tuple[int, int, int], int]):
                 cell_content = "   "
 
                 # Check what to draw in this cell
-                if (row, col) == tuple(self.agent_pos):
+                if (row, col) == tuple([self.agent_pos[0], self.agent_pos[1]]):
                     # Draw agent with direction indicator
                     symbol = symbols[self.agent_direction]
                     cell_content = " " + symbol + " "

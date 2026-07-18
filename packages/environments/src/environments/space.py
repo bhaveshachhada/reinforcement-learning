@@ -29,6 +29,12 @@ class DiscreteSpace(Space[int]):
     def sample(self) -> int:
         return self.start + self.rng.choice(self.n)
 
+    def __repr__(self) -> str:
+        return f"""DiscreteSpace(\n\tn={self.n},\n\tstart={self.start},\n\trng={self.rng}\n)"""
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
 
 class ContinuousSpace(Space[npt.NDArray[np.float64]]):
     def __init__(

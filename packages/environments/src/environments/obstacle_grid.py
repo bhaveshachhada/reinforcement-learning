@@ -280,6 +280,103 @@ class GridEnvironment(Environment[Tuple[int, int, int], int]):
         }
 
 
+class StochasticGridEnvironment(GridEnvironment):
+    """Stochastic Grid Environment where every move has some probability of being applied twice"""
+
+    def __init__(
+        self,
+        rows: int,
+        cols: int,
+        rng: np.random.Generator,
+        start_pos: Tuple[int, int, int],
+        goal_pos: Tuple[int, int, int],
+        obstacles: Iterable[Tuple[int, int]] = None,
+        use_unicode: bool = True,
+        double_move_prob: float = 0.1,
+    ):
+        super().__init__(
+            rows=rows,
+            cols=cols,
+            rng=rng,
+            start_pos=start_pos,
+            goal_pos=goal_pos,
+            obstacles=obstacles,
+            use_unicode=use_unicode,
+        )
+        self.double_move_prob = double_move_prob
+
+    def step(self, action: int) -> Tuple[Tuple[int, int, int], int, bool]:
+        """
+        Execute action and return new position and collision flag
+
+        Actions:
+            0: Move Forward (in current direction)
+            1: Turn Right (change direction clockwise)
+            2: Turn Left (change direction counter-clockwise)
+            3: Move Backward
+
+        Returns:
+            (new_position, reward, is_terminal) - tuple with new position, reward, is_terminal
+        """
+        terminal = False
+        reward = -1
+
+        double_move = self.rng.binomial(n=1, p=self.double_move_prob)
+
+        if action == 0:  # Move forward
+            new_pos = self._move_in_direction(
+                (self.agent_pos[0], self.agent_pos[1]), self.agent_direction
+            )
+            if double_move:
+                new_pos = self._move_in_direction(
+                    (new_pos[0], new_pos[1]), self.agent_direction
+                )
+        elif action == 1:  # Turn right
+            self.agent_direction = Direction((self.agent_direction + 1) % 4)
+            new_pos = (self.agent_pos[0], self.agent_pos[1])
+        elif action == 2:  # Turn left
+            self.agent_direction = Direction((self.agent_direction - 1) % 4)
+            new_pos = (self.agent_pos[0], self.agent_pos[1])
+        elif action == 3:  # Move backward
+            opposite_dir = Direction((self.agent_direction + 2) % 4)
+            new_pos = self._move_in_direction(
+                (self.agent_pos[0], self.agent_pos[1]), opposite_dir
+            )
+            if double_move:
+                new_pos = self._move_in_direction(
+                    (new_pos[0], new_pos[1]), opposite_dir
+                )
+        else:
+            raise ValueError(f"Invalid action {action}")
+
+        # Check if new position is valid
+        if self._is_colliding_with_obstacle(new_pos):
+            reward = -10
+            terminal = True
+
+        elif (
+            new_pos == self.goal_pos[:-1]
+            and self.agent_direction.value == self.goal_pos[-1]
+        ):
+            reward = 1
+            terminal = True
+            self.agent_pos = new_pos
+
+        elif self._is_position_in_bounds((new_pos[0], new_pos[1])):
+            print(f"\033[33m[env step]\033[0m: {new_pos=} is in bounds")
+            self.agent_pos = new_pos
+
+        self.step_count += 1
+
+        new_state: Tuple[int, int, int] = (
+            self.agent_pos[0],
+            self.agent_pos[1],
+            self.agent_direction.value,
+        )
+        print(f"\033[33m[env step]\033[0m: {new_state=}, {reward=}, {terminal=}")
+        return new_state, reward, terminal
+
+
 # ============================================================================
 # EXAMPLE USAGE
 # ============================================================================

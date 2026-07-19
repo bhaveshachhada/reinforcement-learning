@@ -198,7 +198,6 @@ if __name__ == "__main__":
         q_table[s[0], s[1], s[2], a] = value
 
     agent: Sarsa[Tuple[int, int, int], int] = Sarsa(
-        env=environment,
         policy=policy,
         q_value_getter=lambda s, a: float(q_table[s[0], s[1], s[2], a]),
         q_value_setter=set_q_value,
@@ -207,7 +206,7 @@ if __name__ == "__main__":
         rng=rng,
     )
     # agent: QLearningAgent[Tuple[int, int, int], int] = QLearningAgent(
-    #     env=environment,
+    #     action_space=action_space,
     #     policy=policy,
     #     q_value_getter=lambda s, a: float(q_table[s[0], s[1], s[2], a]),
     #     q_value_setter=set_q_value,

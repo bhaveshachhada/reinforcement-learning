@@ -1,7 +1,6 @@
 from typing import Union, Callable
 
 from packages.agents.src.agents.agent import Agent, ObsType, ActType
-from packages.environments.src.environments.environment import Environment
 from packages.environments.src.environments.space import DiscreteSpace
 from packages.policies.src.policies.policy import Policy
 
@@ -12,17 +11,17 @@ type Number = Union[int, float]
 class QLearningAgent(Agent[ObsType, ActType]):
     def __init__(
         self,
-        env: Environment,
+        action_space: DiscreteSpace,
         policy: Policy,
         q_value_getter: Callable[[ObsType, ActType], Number],
         q_value_setter: Callable[[ObsType, ActType, Number], None],
         discount_factor: float,
         learning_rate: float,
     ):
-        self.env = env
         self.policy = policy
+        self.action_space = action_space
 
-        assert isinstance(self.env.action_space, DiscreteSpace), (
+        assert isinstance(self.action_space, DiscreteSpace), (
             f"{self.__class__.__name__} only supports DiscreteSpace for Actions"
         )
 
@@ -35,8 +34,8 @@ class QLearningAgent(Agent[ObsType, ActType]):
         return self.policy.choose_action(state)
 
     def _max_q_for_state(self, state: ObsType) -> Number:
-        n = self.env.action_space.n
-        start = self.env.action_space.start
+        n = self.action_space.n
+        start = self.action_space.start
         return max(self.get_q_value(state, a) for a in range(start, start + n))
 
     def step(

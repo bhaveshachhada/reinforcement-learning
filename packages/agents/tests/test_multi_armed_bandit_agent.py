@@ -19,7 +19,7 @@ def make_agent(n_arms=3, policy=None):
     env = MultiArmedBanditEnvironment(n_arms=n_arms, rng=np.random.default_rng(0))
     q_values = np.zeros((n_arms,), dtype=np.float64)
     return MultiArmedBanditAgent(
-        env=env,
+        n_arms=env.n_arms,
         policy=policy or StubPolicy(action=0),
         q_values=q_values,
         rng=np.random.default_rng(0),

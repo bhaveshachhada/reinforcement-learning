@@ -14,7 +14,6 @@ class StubPolicy:
 
 def make_agent(q_table, discount_rate=0.9, lr=0.1, policy=None):
     return Sarsa(
-        env=None,
         policy=policy or StubPolicy(action=0),
         q_value_getter=lambda state, action: q_table.get((state, action), 0.0),
         q_value_setter=lambda state, action, value: q_table.__setitem__(

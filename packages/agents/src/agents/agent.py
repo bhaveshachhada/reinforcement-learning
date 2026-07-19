@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, TypeVar, Generic, Union
 
-from packages.environments.src.environments.environment import Environment
 from packages.policies.src.policies.policy import Policy
 
 
@@ -10,7 +9,6 @@ ObsType = TypeVar("ObsType")
 
 
 class Agent(ABC, Generic[ObsType, ActType]):
-    env: Environment
     policy: Policy
 
     @abstractmethod

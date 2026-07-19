@@ -4,7 +4,6 @@ from typing import Union, Callable
 import numpy as np
 
 from packages.agents.src.agents.agent import Agent, ObsType, ActType
-from packages.environments.src.environments.environment import Environment
 from packages.policies.src.policies.policy import Policy
 
 
@@ -14,7 +13,6 @@ type Number = Union[int, float]
 class Sarsa(Agent[ObsType, ActType]):
     def __init__(
         self,
-        env: Environment,
         policy: Policy,
         q_value_getter: Callable[[ObsType, ActType], Number],
         q_value_setter: Callable[[ObsType, ActType, Number], NoneType],
@@ -22,7 +20,6 @@ class Sarsa(Agent[ObsType, ActType]):
         lr: float,
         rng: np.random.Generator,
     ):
-        self.env = env
         self.policy = policy
         self.get_q_value = q_value_getter
         self.set_q_value = q_value_setter

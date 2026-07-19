@@ -4,24 +4,20 @@ from typing import Union
 import numpy as np
 
 from packages.agents.src.agents.agent import Agent
-from packages.environments.src.environments.multi_armed_bandit import (
-    MultiArmedBanditEnvironment,
-)
 from packages.policies.src.policies.policy import Policy
 
 
 class MultiArmedBanditAgent(Agent[None, int]):
     def __init__(
         self,
-        env: MultiArmedBanditEnvironment,
+        n_arms: int,
         policy: Policy,
         q_values: np.ndarray[tuple[int], np.float64],
         rng: np.random.Generator,
     ):
-        self.env = env
         self.policy = policy
 
-        self.n_arms = env.n_arms
+        self.n_arms = n_arms
         self.q_values = q_values
         self.arm_pull_count: np.ndarray[tuple[int], np.uint8] = np.zeros(
             self.n_arms, dtype=np.uint64

@@ -7,6 +7,7 @@ from packages.agents.src.agents.sarsa import Sarsa
 from packages.environments.src.environments.obstacle_grid import (
     Direction,
     GridEnvironment,
+    StochasticGridEnvironment,
 )
 from packages.environments.src.environments.space import DiscreteSpace
 from packages.policies.src.policies.policy import EpsilonGreedyPolicy
@@ -139,24 +140,42 @@ def example_with_fallback():
 if __name__ == "__main__":
     rng = np.random.default_rng(1)
     start_state = (0, 0, 0)
-    n_rows = 5
-    n_cols = 5
+    n_rows = 6
+    n_cols = 6
     goal_state = (n_rows - 1, n_cols - 1, 0)
-    environment = GridEnvironment(
+    # environment = GridEnvironment(
+    #     rows=n_rows,
+    #     cols=n_cols,
+    #     rng=rng,
+    #     start_pos=start_state,
+    #     goal_pos=goal_state,
+    #     obstacles=[
+    #         # (1, 0),
+    #         # (1, 1),
+    #         # (1, 2),
+    #         # (1, 3),
+    #         # (3, 0),
+    #         # (3, 2),
+    #         # (3, 3),
+    #         # (3, 4),
+    #     ],
+    # )
+
+    environment = StochasticGridEnvironment(
         rows=n_rows,
         cols=n_cols,
         rng=rng,
         start_pos=start_state,
         goal_pos=goal_state,
         obstacles=[
-            (1, 0),
-            (1, 1),
-            (1, 2),
-            (1, 3),
-            (3, 1),
-            (3, 2),
-            (3, 3),
-            (3, 4),
+            # (1, 0),
+            (0, 1),
+            (0, 2),
+            (0, 3),
+            # (3, 0),
+            # (3, 2),
+            # (3, 3),
+            # (3, 4),
         ],
     )
 
@@ -184,12 +203,20 @@ if __name__ == "__main__":
         q_value_getter=lambda s, a: float(q_table[s[0], s[1], s[2], a]),
         q_value_setter=set_q_value,
         discount_rate=0.99,
-        lr=0.1,
+        lr=0.11,
         rng=rng,
     )
+    # agent: QLearningAgent[Tuple[int, int, int], int] = QLearningAgent(
+    #     env=environment,
+    #     policy=policy,
+    #     q_value_getter=lambda s, a: float(q_table[s[0], s[1], s[2], a]),
+    #     q_value_setter=set_q_value,
+    #     discount_factor=0.95,
+    #     learning_rate=0.01,
+    # )
 
     steps = []
-    for episode in range(500):
+    for episode in range(1000):
         print("\033[36m ======== Episode {} started =======\033[0m".format(episode))
 
         step = 0
@@ -234,9 +261,13 @@ if __name__ == "__main__":
 
     print(q_table.mean(axis=(2, 3)))
 
+    input("Training completed, Press Enter to continue...")
+
     done = False
     state = environment.reset()
+    policy.epsilon = 0.0
     environment.render()
+    time.sleep(0.4)
     while not done:
         action = agent.choose_action(state=state)
         next_state, reward, done = environment.step(action)
